@@ -4,6 +4,7 @@ import sqlite3
 import pytest
 
 from ahnlich_icl.spider import load_examples, load_schema
+from ahnlich_icl.text2sql import extract_sql
 
 
 def test_loads_examples_with_stable_ids(tmp_path):
@@ -69,3 +70,18 @@ def test_loads_schema_from_sqlite(tmp_path):
     assert "CREATE TABLE departments" in schema
     assert "CREATE TABLE employees" in schema
     assert "FOREIGN KEY (department_id)" in schema
+
+def test_extracts_sql_from_markdown_fence():
+    raw_output = "```sql\nSELECT COUNT(*) FROM employees;\n```"
+
+    sql = extract_sql(raw_output)
+
+    assert sql == "SELECT COUNT(*) FROM employees;"
+
+
+def test_does_not_repair_non_fenced_output():
+    raw_output = "Here is the query:\nSELECT COUNT(*) FROM employees;"
+
+    sql = extract_sql(raw_output)
+
+    assert sql == raw_output

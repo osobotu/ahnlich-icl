@@ -22,14 +22,14 @@ def main() -> None:
 
     print(f"Query:\n{args.question}\n")
 
-    for rank, result in enumerate(results, start=1):
-        metadata = result["metadata"]
+    for rank, match in enumerate(results, start=1):
+        example = match.example
 
-        print(f"{rank}. similarity={result['similarity']:.4f}")
-        print(f"   ID: {metadata['example_id']}")
-        print(f"   Database: {metadata['db_id']}")
-        print(f"   Question: {result['content']}")
-        print(f"   SQL: {metadata['sql']}")
+        print(f"{rank}. similarity={match.similarity:.4f}")
+        print(f"   ID: {example.example_id}")
+        print(f"   Database: {example.db_id}")
+        print(f"   Question: {example.question}")
+        print(f"   SQL: {example.sql}")
         print()
 
 

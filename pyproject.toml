@@ -5,6 +5,7 @@ requires-python = ">=3.11,<3.14"
 dependencies = [
     "ahnlich-mcp==0.1.2",
     "mcp>=1.27,<2",
+    "openai>=3.10.0",
 ]
 
 [dependency-groups]

@@ -2,7 +2,7 @@ import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
-
+from dataclasses import dataclass
 from ahnlich_icl.spider import Example
 
 from mcp import ClientSession, StdioServerParameters
@@ -10,6 +10,10 @@ from mcp.client.stdio import stdio_client
 
 
 ToolResult = dict[str, Any] | list[dict[str, Any]]
+@dataclass(frozen=True)
+class SearchMatch:
+    example: Example
+    similarity: float
 
 
 @asynccontextmanager
@@ -68,7 +72,7 @@ async def similarity_search(
     store_name: str,
     question: str,
     k: int = 5,
-) -> list[dict[str, Any]]:
+) -> list[SearchMatch]:
     result = await call_ahnlich_tool(
         "similarity_search",
         {
@@ -85,7 +89,7 @@ async def similarity_search(
     if not isinstance(result, list):
         raise RuntimeError("Ahnlich MCP returned unexpected search results")
 
-    return result
+    return [_search_match(item) for item in result]
 
 async def drop_store(store_name: str) -> ToolResult:
     return await call_ahnlich_tool(
@@ -116,3 +120,17 @@ def _text_entry(example: Example) -> dict[str, Any]:
         "content": example.question,
         "metadata": metadata,
     }
+
+def _search_match(result: dict[str, Any]) -> SearchMatch:
+    metadata = result["metadata"]
+
+    return SearchMatch(
+        example=Example(
+            example_id=metadata["example_id"],
+            question=result["content"],
+            sql=metadata["sql"],
+            db_id=metadata["db_id"],
+            difficulty=metadata.get("difficulty"),
+        ),
+        similarity=float(result["similarity"]),
+    )
