@@ -14,7 +14,8 @@ SYSTEM_PROMPT = (
 )
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
-MAX_COMPLETION_TOKENS = 512
+DEFAULT_REASONING_EFFORT = "low"
+MAX_COMPLETION_TOKENS = 1024
 
 @dataclass(frozen=True)
 class SqlGeneration:
@@ -60,6 +61,12 @@ def generate_sql(
         model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
         temperature=0,
         max_completion_tokens=MAX_COMPLETION_TOKENS,
+        extra_body={
+            "reasoning_effort": os.getenv(
+                "LLM_REASONING_EFFORT",
+                DEFAULT_REASONING_EFFORT,
+            )
+        },
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -69,9 +76,13 @@ def generate_sql(
         ],
     )
 
-    raw_output = response.choices[0].message.content
+    choice = response.choices[0]
+    raw_output = choice.message.content
     if not raw_output:
-        raise RuntimeError("LLM returned an empty response")
+        raise RuntimeError(
+            "LLM returned an empty response "
+            f"(finish_reason={choice.finish_reason})"
+        )
 
     return SqlGeneration(
         raw_output=raw_output,

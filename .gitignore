@@ -4,3 +4,5 @@ results/
 __pycache__/
 .pytest_cache/
 .env
+tools/test-suite-sql-eval/
+data/test-suite/
