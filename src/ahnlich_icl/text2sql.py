@@ -1,9 +1,11 @@
 import os
 from collections.abc import Sequence
-from functools import cache
 from dataclasses import dataclass
+from functools import cache
+from typing import Any
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletion
 
 from ahnlich_icl.spider import Example
 
@@ -16,6 +18,7 @@ DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_REASONING_EFFORT = "low"
 MAX_COMPLETION_TOKENS = 1024
+
 
 @dataclass(frozen=True)
 class SqlGeneration:
@@ -52,12 +55,20 @@ def build_prompt(
 
     return "\n\n".join(sections)
 
-def generate_sql(
-    question: str,
-    schema: str,
-    demonstrations: Sequence[Example] = (),
-) -> SqlGeneration:
-    response = _llm_client().chat.completions.create(
+
+def create_chat_completion(
+    messages: list[dict[str, Any]],
+    *,
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str = "auto",
+) -> ChatCompletion:
+    tool_options: dict[str, Any] = {}
+
+    if tools is not None:
+        tool_options["tools"] = tools
+        tool_options["tool_choice"] = tool_choice
+
+    return _llm_client().chat.completions.create(
         model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
         temperature=0,
         max_completion_tokens=MAX_COMPLETION_TOKENS,
@@ -67,13 +78,28 @@ def generate_sql(
                 DEFAULT_REASONING_EFFORT,
             )
         },
-        messages=[
+        messages=messages,
+        **tool_options,
+    )
+
+
+def generate_sql(
+    question: str,
+    schema: str,
+    demonstrations: Sequence[Example] = (),
+) -> SqlGeneration:
+    response = create_chat_completion(
+        [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": build_prompt(question, schema, demonstrations),
+                "content": build_prompt(
+                    question,
+                    schema,
+                    demonstrations,
+                ),
             },
-        ],
+        ]
     )
 
     choice = response.choices[0]
@@ -89,6 +115,7 @@ def generate_sql(
         sql=extract_sql(raw_output),
     )
 
+
 def extract_sql(raw_output: str) -> str:
     stripped_output = raw_output.strip()
     lines = stripped_output.splitlines()
@@ -102,6 +129,7 @@ def extract_sql(raw_output: str) -> str:
         return "\n".join(lines[1:-1]).strip()
 
     return stripped_output
+
 
 @cache
 def _llm_client() -> OpenAI:
