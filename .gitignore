@@ -6,3 +6,4 @@ __pycache__/
 .env
 tools/test-suite-sql-eval/
 data/test-suite/
+TODO.md
