@@ -191,20 +191,20 @@ def main() -> None:
                 selected.example
                 for selected in selected_examples
             ]
-            generation = generate_sql(
+            generated_sql = generate_sql(
                 target.question,
                 schema,
                 demonstrations,
             )
             evaluation = evaluator.evaluate(
                 target,
-                generation.sql,
+                generated_sql,
             )
             record = build_generation_record(
                 target,
                 method=method,
                 selected_examples=selected_examples,
-                generation=generation,
+                generated_sql=generated_sql,
                 evaluation=evaluation,
             )
 

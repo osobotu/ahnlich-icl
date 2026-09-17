@@ -1,15 +1,18 @@
 import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
 from dataclasses import dataclass
-from ahnlich_icl.spider import Example
+from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from ahnlich_icl.spider import Example
+
 
 ToolResult = dict[str, Any] | list[dict[str, Any]]
+
+
 @dataclass(frozen=True)
 class SearchMatch:
     example: Example
@@ -43,9 +46,6 @@ async def call_ahnlich_tool(
 
     return json.loads(_response_text(response.content))
 
-
-async def ping_ahnlich() -> ToolResult:
-    return await call_ahnlich_tool("ping", {})
 
 async def create_store(store_name: str) -> ToolResult:
     return await call_ahnlich_tool(

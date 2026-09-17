@@ -8,7 +8,6 @@ from ahnlich_icl.experiment import (
 from ahnlich_icl.evaluation import SpiderEvaluation
 from ahnlich_icl.retrieval import SelectedExample
 from ahnlich_icl.spider import Example
-from ahnlich_icl.text2sql import SqlGeneration
 
 
 def test_builds_generation_record():
@@ -27,14 +26,9 @@ def test_builds_generation_record():
     selected = [
         SelectedExample(
             example=demonstration,
-            source="similar",
             similarity=0.82,
         )
     ]
-    generation = SqlGeneration(
-        raw_output="```sql\nSELECT COUNT(*) FROM singer;\n```",
-        sql="SELECT COUNT(*) FROM singer;",
-    )
     evaluation = SpiderEvaluation(
         difficulty="easy",
         test_suite_correct=True,
@@ -45,7 +39,7 @@ def test_builds_generation_record():
         target,
         method="similar",
         selected_examples=selected,
-        generation=generation,
+        generated_sql="SELECT COUNT(*) FROM singer;",
         evaluation=evaluation,
     )
 
@@ -62,12 +56,9 @@ def test_builds_generation_record():
                 "question": "How many employees are there?",
                 "sql": "SELECT COUNT(*) FROM employee",
                 "db_id": "company",
-                "difficulty": None,
-                "source": "similar",
                 "similarity": 0.82,
             }
         ],
-        "raw_output": "```sql\nSELECT COUNT(*) FROM singer;\n```",
         "generated_sql": "SELECT COUNT(*) FROM singer;",
         "test_suite_correct": True,
         "exact_match": True,
@@ -82,10 +73,6 @@ def test_records_structured_evaluation_failure():
         sql="SELECT name FROM singer",
         db_id="concert_singer",
     )
-    generation = SqlGeneration(
-        raw_output="SELECT missing FROM singer",
-        sql="SELECT missing FROM singer",
-    )
     evaluation = SpiderEvaluation(
         difficulty="medium",
         test_suite_correct=False,
@@ -97,7 +84,7 @@ def test_records_structured_evaluation_failure():
         target,
         method="zero",
         selected_examples=[],
-        generation=generation,
+        generated_sql="SELECT missing FROM singer",
         evaluation=evaluation,
     )
 

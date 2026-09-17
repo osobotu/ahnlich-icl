@@ -24,9 +24,3 @@ packages = ["src/ahnlich_icl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-[mcp_servers.ahnlich]
-command = "uv"
-args = ["run", "ahnlich-mcp", "--profile", "ai"]
-env = { AHNLICH_MCP_READ_ONLY = "true" }
-enabled_tools = ["ping", "similarity_search"]

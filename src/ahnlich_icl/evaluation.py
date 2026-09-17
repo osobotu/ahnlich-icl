@@ -1,10 +1,9 @@
 import sqlite3
-from collections import Counter
+import importlib.util
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic
-import importlib.util
-import sys
 from types import ModuleType
 
 from ahnlich_icl.spider import Example
@@ -13,44 +12,22 @@ from ahnlich_icl.spider import Example
 _PROGRESS_HANDLER_STEPS = 10_000
 
 
-@dataclass(frozen=True)
-class ExecutionResult:
-    execution_match: bool
-    error: str | None = None
-
-
-def evaluate_execution(
+def _prediction_error(
     database_path: Path,
     predicted_sql: str,
-    gold_sql: str,
     *,
     timeout_seconds: float = 5.0,
-) -> ExecutionResult:
-    """Compare result-row multisets without modifying the database."""
+) -> str | None:
     try:
-        gold_rows = _execute_query(
-            database_path,
-            gold_sql,
-            timeout_seconds,
-        )
-    except sqlite3.Error as error:
-        raise RuntimeError(f"Gold SQL failed: {error}") from error
-
-    try:
-        predicted_rows = _execute_query(
+        _execute_query(
             database_path,
             predicted_sql,
             timeout_seconds,
         )
     except sqlite3.Error as error:
-        return ExecutionResult(
-            execution_match=False,
-            error=str(error),
-        )
+        return str(error)
 
-    return ExecutionResult(
-        execution_match=Counter(predicted_rows) == Counter(gold_rows)
-    )
+    return None
 
 
 def _execute_query(
@@ -114,11 +91,6 @@ class SpiderEvaluator:
         predicted_sql: str,
     ) -> SpiderEvaluation:
         database_path = self._database_path(example.db_id)
-        if not database_path.is_file():
-            raise FileNotFoundError(
-                f"Test-suite database not found: {database_path}"
-            )
-
         schema = self._official.Schema(
             self._official.get_schema(str(database_path))
         )
@@ -127,15 +99,14 @@ class SpiderEvaluator:
             gold_tree
         )
 
-        preflight = evaluate_execution(
+        execution_error = _prediction_error(
             database_path,
             predicted_sql,
-            example.sql,
         )
-        if preflight.error is not None:
+        if execution_error is not None:
             return _failed_evaluation(
                 difficulty,
-                preflight.error,
+                execution_error,
             )
 
         test_suite_correct, execution_error = (

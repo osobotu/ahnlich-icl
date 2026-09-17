@@ -8,8 +8,6 @@ services:
       --persistence-interval 30"
     volumes:
       - ahnlich_data:/root/.ahnlich/data
-    ports:
-      - "1369:1369"
     healthcheck:
       test:
         [

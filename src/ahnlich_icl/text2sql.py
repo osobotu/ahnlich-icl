@@ -1,11 +1,8 @@
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass
 from functools import cache
-from typing import Any
 
 from openai import OpenAI
-from openai.types.chat import ChatCompletion
 
 from ahnlich_icl.spider import Example
 
@@ -18,12 +15,6 @@ DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_REASONING_EFFORT = "low"
 MAX_COMPLETION_TOKENS = 1024
-
-
-@dataclass(frozen=True)
-class SqlGeneration:
-    raw_output: str
-    sql: str
 
 
 def build_prompt(
@@ -56,19 +47,12 @@ def build_prompt(
     return "\n\n".join(sections)
 
 
-def create_chat_completion(
-    messages: list[dict[str, Any]],
-    *,
-    tools: list[dict[str, Any]] | None = None,
-    tool_choice: str = "auto",
-) -> ChatCompletion:
-    tool_options: dict[str, Any] = {}
-
-    if tools is not None:
-        tool_options["tools"] = tools
-        tool_options["tool_choice"] = tool_choice
-
-    return _llm_client().chat.completions.create(
+def generate_sql(
+    question: str,
+    schema: str,
+    demonstrations: Sequence[Example] = (),
+) -> str:
+    response = _llm_client().chat.completions.create(
         model=os.getenv("LLM_MODEL", DEFAULT_MODEL),
         temperature=0,
         max_completion_tokens=MAX_COMPLETION_TOKENS,
@@ -78,18 +62,7 @@ def create_chat_completion(
                 DEFAULT_REASONING_EFFORT,
             )
         },
-        messages=messages,
-        **tool_options,
-    )
-
-
-def generate_sql(
-    question: str,
-    schema: str,
-    demonstrations: Sequence[Example] = (),
-) -> SqlGeneration:
-    response = create_chat_completion(
-        [
+        messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
@@ -99,7 +72,7 @@ def generate_sql(
                     demonstrations,
                 ),
             },
-        ]
+        ],
     )
 
     choice = response.choices[0]
@@ -110,10 +83,7 @@ def generate_sql(
             f"(finish_reason={choice.finish_reason})"
         )
 
-    return SqlGeneration(
-        raw_output=raw_output,
-        sql=extract_sql(raw_output),
-    )
+    return extract_sql(raw_output)
 
 
 def extract_sql(raw_output: str) -> str:

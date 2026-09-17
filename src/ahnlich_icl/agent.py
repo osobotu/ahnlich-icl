@@ -41,7 +41,7 @@ async def answer_question(
         if match.similarity >= MIN_EXAMPLE_SIMILARITY
     )
 
-    generation = generate_sql(
+    sql = generate_sql(
         question,
         schema,
         demonstrations=[
@@ -52,11 +52,11 @@ async def answer_question(
 
     columns, rows, truncated = _execute_read_only(
         database_path,
-        generation.sql,
+        sql,
     )
 
     return AgentAnswer(
-        sql=generation.sql,
+        sql=sql,
         columns=columns,
         rows=rows,
         retrieved_examples=retrieved_examples,

@@ -13,14 +13,11 @@ SelectionMethod = Literal[
     "random",
     "similar",
 ]
-SelectionSource = Literal["random", "similar"]
-
 RANDOM_SEED = 7
 
 @dataclass(frozen=True)
 class SelectedExample:
     example: Example
-    source: SelectionSource
     similarity: float | None = None
 
 
@@ -74,7 +71,7 @@ class ExampleSelector:
         random = Random(int.from_bytes(seed_bytes[:8], "big"))
 
         return [
-            SelectedExample(example=example, source="random")
+            SelectedExample(example=example)
             for example in random.sample(candidates, k)
         ]
 
@@ -96,7 +93,6 @@ class ExampleSelector:
         return [
             SelectedExample(
                 example=match.example,
-                source="similar",
                 similarity=match.similarity,
             )
             for match in matches

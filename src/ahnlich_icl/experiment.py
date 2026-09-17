@@ -9,7 +9,6 @@ from ahnlich_icl.retrieval import (
     SelectionMethod,
 )
 from ahnlich_icl.spider import Example
-from ahnlich_icl.text2sql import SqlGeneration
 
 
 JsonRecord = dict[str, Any]
@@ -20,7 +19,7 @@ def build_generation_record(
     *,
     method: SelectionMethod,
     selected_examples: Sequence[SelectedExample],
-    generation: SqlGeneration,
+    generated_sql: str,
     evaluation: SpiderEvaluation,
 ) -> JsonRecord:
     return {
@@ -34,8 +33,7 @@ def build_generation_record(
             _selected_example_record(selected)
             for selected in selected_examples
         ],
-        "raw_output": generation.raw_output,
-        "generated_sql": generation.sql,
+        "generated_sql": generated_sql,
         "test_suite_correct": evaluation.test_suite_correct,
         "exact_match": evaluation.exact_match,
         "evaluation_error": evaluation.error,
@@ -118,7 +116,5 @@ def _selected_example_record(
         "question": example.question,
         "sql": example.sql,
         "db_id": example.db_id,
-        "difficulty": example.difficulty,
-        "source": selected.source,
         "similarity": selected.similarity,
     }

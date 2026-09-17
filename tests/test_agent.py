@@ -7,7 +7,6 @@ import pytest
 import ahnlich_icl.agent as agent
 from ahnlich_icl.ahnlich_mcp import SearchMatch
 from ahnlich_icl.spider import Example
-from ahnlich_icl.text2sql import SqlGeneration
 
 
 def create_database(tmp_path: Path) -> Path:
@@ -59,10 +58,7 @@ def test_always_retrieves_examples_before_generating_sql(
     def generate(question, schema, demonstrations):
         calls.append("generate")
         assert demonstrations == [match.example]
-        return SqlGeneration(
-            raw_output="SELECT name FROM employees WHERE salary > 80000",
-            sql="SELECT name FROM employees WHERE salary > 80000",
-        )
+        return "SELECT name FROM employees WHERE salary > 80000"
 
     monkeypatch.setattr(agent, "similarity_search", search)
     monkeypatch.setattr(agent, "generate_sql", generate)
@@ -98,10 +94,7 @@ def test_generates_without_examples_when_none_meet_the_threshold(
 
     def generate(question, schema, demonstrations):
         assert demonstrations == []
-        return SqlGeneration(
-            raw_output="SELECT name FROM employees",
-            sql="SELECT name FROM employees",
-        )
+        return "SELECT name FROM employees"
 
     monkeypatch.setattr(agent, "similarity_search", search)
     monkeypatch.setattr(agent, "generate_sql", generate)
@@ -126,10 +119,7 @@ def test_generated_sql_cannot_modify_the_database(tmp_path, monkeypatch):
         return [retrieved_example()]
 
     def generate(question, schema, demonstrations):
-        return SqlGeneration(
-            raw_output="DELETE FROM employees",
-            sql="DELETE FROM employees",
-        )
+        return "DELETE FROM employees"
 
     monkeypatch.setattr(agent, "similarity_search", search)
     monkeypatch.setattr(agent, "generate_sql", generate)

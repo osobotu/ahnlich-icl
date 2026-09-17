@@ -48,7 +48,6 @@ def test_random_selection_is_reproducible_and_order_independent():
     assert [item.example.example_id for item in first] == [
         item.example.example_id for item in second
     ]
-    assert {item.source for item in first} == {"random"}
 
 
 def test_similar_selection_recovers_examples_and_scores(monkeypatch):
@@ -97,4 +96,3 @@ def test_similar_selection_recovers_examples_and_scores(monkeypatch):
         "Retrieved two",
     ]
     assert [item.similarity for item in selected] == [0.9, 0.8]
-    assert {item.source for item in selected} == {"similar"}
